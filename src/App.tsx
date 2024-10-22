@@ -32,6 +32,7 @@ import { Pencil1Icon } from "@radix-ui/react-icons";
 import VpnServerUpdateForm from "./UpdateForm";
 import { TOKEN, URL } from "./constants";
 import { Switch } from "./components/ui/switch";
+import DeletePermissionDialog from "./DeleteModal";
 
 export const CountryInput = ({
   country,
@@ -182,7 +183,12 @@ export const VPNFilesTable = ({
 }) => {
   const [files, setFiles] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [d, setD] = useState({
+    visible: false,
+    id: "",
+  });
   const [delFlag, setDelFlag] = useState(false);
+
   const downloadFile = async (url: string) => {
     try {
       const response = await axios.get(url);
@@ -208,19 +214,6 @@ export const VPNFilesTable = ({
       window.URL.revokeObjectURL(urlBlob);
     } catch (error) {
       console.error("Error downloading file:", error);
-    }
-  };
-
-  const deleteFile = async (id: string) => {
-    try {
-      await axios.delete(`${URL}/open-vpn/${id}`);
-      console.log("File deleted successfully");
-
-      toast.success("File deleted successfully");
-
-      setDelFlag(!delFlag);
-    } catch (error) {
-      console.log("Error deleting file:", error);
     }
   };
 
@@ -306,8 +299,10 @@ export const VPNFilesTable = ({
           <Button
             variant="outline"
             size="sm"
-            //@ts-ignore
-            onClick={() => deleteFile(`${info.row.original._id.toString()}`)}
+            onClick={() =>
+              //@ts-ignore
+              setD({ id: `${info.row.original._id.toString()}`, visible: true })
+            }
             className="flex items-center gap-2 border-red-500 text-red-500"
           >
             <TrashIcon className="h-4 w-4" />
@@ -349,61 +344,70 @@ export const VPNFilesTable = ({
   }, [flag, delFlag]);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Uploaded Files</h2>
-      <Input
-        placeholder="Search files..."
-        value={globalFilter ?? ""}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-        className="max-w-sm"
-      />
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup, i) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={i}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row, i) => (
-                <TableRow
-                  key={i}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+    <>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Uploaded Files</h2>
+        <Input
+          placeholder="Search files..."
+          value={globalFilter ?? ""}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup, i) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={i}>
                       {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
+                        header.column.columnDef.header,
+                        header.getContext()
                       )}
-                    </TableCell>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row, i) => (
+                  <TableRow
+                    key={i}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+      {d.visible && (
+        <DeletePermissionDialog
+          id={d.id}
+          onClose={() => setD({ id: "", visible: false })}
+          setFlag={setDelFlag}
+        />
+      )}
+    </>
   );
 };
 
