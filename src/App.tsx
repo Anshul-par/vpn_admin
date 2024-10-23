@@ -430,6 +430,10 @@ export default function Component() {
     isProton: false,
     isFreeOpenVpn: false,
   });
+  const [cred, setCreds] = useState({
+    username: "",
+    password: "",
+  });
 
   const [showUpdateForm, setShowUpdateForm] = useState({
     visible: false,
@@ -453,6 +457,14 @@ export default function Component() {
       formData.append("type", extra.type.toUpperCase());
     }
 
+    formData.append("isProton", provider.isProton.toString());
+    formData.append("isFreeOpenVpn", provider.isFreeOpenVpn.toString());
+
+    if (provider.isFreeOpenVpn) {
+      formData.append("username", cred.username);
+      formData.append("password", cred.password);
+    }
+
     try {
       // Send the form data using Axios
       await axios.post(`${URL}/open-vpn`, formData, {
@@ -470,6 +482,14 @@ export default function Component() {
       setExtras({
         category: "",
         type: "",
+      });
+      setProvider({
+        isProton: false,
+        isFreeOpenVpn: false,
+      });
+      setCreds({
+        username: "",
+        password: "",
       });
 
       setFlag(!flag);
@@ -582,13 +602,27 @@ export default function Component() {
           {provider.isFreeOpenVpn && (
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input id="username" placeholder="Username" />
+              <Input
+                id="username"
+                placeholder="Username"
+                value={cred.username}
+                onChange={(e) =>
+                  setCreds((p) => ({ ...p, username: e.target.value }))
+                }
+              />
             </div>
           )}
           {provider.isFreeOpenVpn && (
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" placeholder="Password" />
+              <Input
+                id="password"
+                placeholder="Password"
+                value={cred.password}
+                onChange={(e) =>
+                  setCreds((p) => ({ ...p, password: e.target.value }))
+                }
+              />
             </div>
           )}
           <div className="space-y-2">
@@ -628,6 +662,7 @@ export default function Component() {
             <VpnServerUpdateForm
               initialData={showUpdateForm.data}
               setShowUpdateForm={setShowUpdateForm}
+              setFlag={setFlag}
             />
           </DialogContent>
         </Dialog>
