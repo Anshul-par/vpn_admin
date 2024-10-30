@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { DownloadIcon, TrashIcon } from "lucide-react";
 import { Pencil1Icon } from "@radix-ui/react-icons";
 import { TOKEN, URL } from "./constants";
@@ -61,7 +62,11 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
   setShowUpdateForm,
 }) => {
   const [files, setFiles] = useState<VPNFile[]>([]);
-  const [typeFilter, setTypeFilter] = useState<VPNType>("ALL");
+  const [typeFilter, setTypeFilter] = useState<VPNType>(() => {
+    const v = localStorage.getItem("vpnTypeFilter");
+    return (v as VPNType) || "ALL";
+  });
+  const [columnFilter, setColumnFilter] = useState("all");
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
     visible: false,
@@ -70,11 +75,24 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
   const [deleteFlag, setDeleteFlag] = useState(false);
 
   const filteredData = useMemo(() => {
-    if (typeFilter === "ALL") return files;
-    return files.filter((file) =>
-      typeFilter === "FREE_OPEN_VPN" ? file.isFreeOpenVpn : !file.isFreeOpenVpn
-    );
-  }, [files, typeFilter]);
+    return files.filter((file) => {
+      const typeMatch =
+        typeFilter === "ALL" ||
+        (typeFilter === "FREE_OPEN_VPN"
+          ? file.isFreeOpenVpn
+          : !file.isFreeOpenVpn);
+
+      const columnMatch =
+        columnFilter === "all" ||
+        //@ts-ignore
+        (columnFilter === "visible" && !file.hide) ||
+        //@ts-ignore
+        (columnFilter === "hidden" && file.hide) ||
+        (columnFilter === "cs" && !file.url);
+
+      return typeMatch && columnMatch;
+    });
+  }, [files, typeFilter, columnFilter]);
 
   const downloadFile = async (url: string) => {
     try {
@@ -103,11 +121,87 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
     () => [
       columnHelper.accessor("country", {
         header: "Country",
+        cell: ({ getValue, row }) => (
+          <>
+            <img
+              //@ts-ignore
+              src={row.original.flag || ""}
+              className="w-5 h-5 inline-block mr-2"
+            />
+            <p className="inline-block">{getValue()}</p>
+          </>
+        ),
+      }),
+      //@ts-ignore
+      columnHelper.accessor("cityname", {
+        header: "City",
+        cell: ({ getValue }) => (
+          <>
+            <p className="inline-block">{getValue()}</p>
+          </>
+        ),
       }),
       columnHelper.accessor("isFreeOpenVpn", {
         header: "Type",
         cell: ({ row }) =>
-          row.original.isFreeOpenVpn ? "FREE_OPEN_VPN" : "PROTON",
+          row.original.isFreeOpenVpn ? "Free Open VPN" : "Proton VPN",
+      }),
+      columnHelper.accessor("isFreeOpenVpn", {
+        header: () => {
+          return (
+            <>
+              <ShadSelect
+                value={columnFilter}
+                onValueChange={(value: any) => {
+                  console.log({ value });
+                  setColumnFilter(value);
+                }}
+              >
+                <SelectTrigger className="w-[100px] border-0 p-2">
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Status</SelectItem>
+                  <SelectItem value="visible">Visible</SelectItem>
+                  <SelectItem value="hidden">Hidden</SelectItem>
+                  <SelectItem value="cs">Coming Soon</SelectItem>
+                </SelectContent>
+              </ShadSelect>
+            </>
+          );
+        },
+        cell: ({ row }) => {
+          if (!row.original.url) {
+            return (
+              <Badge
+                variant="outline"
+                className="border-teal-400 text-teal-400"
+              >
+                Coming Soon
+              </Badge>
+            );
+          }
+          //@ts-ignore
+          if (!row.original.hide) {
+            return (
+              <Badge
+                variant="outline"
+                className="border-rose-500 text-rose-400"
+              >
+                Visible
+              </Badge>
+            );
+          } else {
+            return (
+              <Badge
+                variant="outline"
+                className="border-indigo-400 text-indigo-400"
+              >
+                Hidden
+              </Badge>
+            );
+          }
+        },
       }),
       columnHelper.accessor("username", {
         header: "Username",
@@ -116,20 +210,6 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
       columnHelper.accessor("password", {
         header: "Password",
         cell: ({ row }) => row.original.password || "N/A",
-      }),
-      columnHelper.accessor("url", {
-        header: "Download",
-        cell: ({ getValue }) => (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => downloadFile(getValue())}
-            className="flex items-center gap-2"
-          >
-            <DownloadIcon className="h-4 w-4" />
-            Download
-          </Button>
-        ),
       }),
       columnHelper.accessor("_id", {
         header: "Actions",
@@ -167,8 +247,22 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
           </div>
         ),
       }),
+      columnHelper.accessor("url", {
+        header: "Download",
+        cell: ({ getValue }) => (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadFile(getValue())}
+            className="flex items-center gap-2"
+          >
+            <DownloadIcon className="h-4 w-4" />
+            Download
+          </Button>
+        ),
+      }),
     ],
-    []
+    [columnFilter]
   );
 
   const table = useReactTable({
@@ -209,7 +303,10 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
         <div className="flex items-center gap-4">
           <ShadSelect
             value={typeFilter}
-            onValueChange={(value: VPNType) => setTypeFilter(value)}
+            onValueChange={(value: VPNType) => {
+              setTypeFilter(value);
+              localStorage.setItem("vpnTypeFilter", value);
+            }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select Type" />
