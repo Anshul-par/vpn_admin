@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import VpnServerUpdateForm from "./UpdateForm";
-import { TOKEN, URL } from "./constants";
+import { URL } from "./constants";
 import { Switch } from "./components/ui/switch";
 import { VPNFilesTable } from "./VPNConfigTable";
 
@@ -61,6 +61,7 @@ const initialFormState: FormState = {
 
 export default function VPNConfigForm() {
   // Combined state management
+  const TOKEN = localStorage.getItem("token");
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [showUpdateForm, setShowUpdateForm] = useState<UpdateFormState>({
     visible: false,
@@ -68,6 +69,24 @@ export default function VPNConfigForm() {
     data: {},
   });
   const [refreshFlag, setRefreshFlag] = useState(false);
+
+  // to keep watch on the token expiration
+  useEffect(() => {
+    const expiration = localStorage.getItem("expiration");
+
+    const id = setInterval(() => {
+      if (expiration) {
+        const exp = Number(expiration);
+        if (exp < Date.now()) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("expiration");
+          window.location.reload();
+        }
+      }
+    }, 60 * 1000);
+
+    return () => clearInterval(id);
+  }, []);
 
   // Memoized handlers
   const handleInputChange = useCallback((field: string, value: any) => {
@@ -138,7 +157,7 @@ export default function VPNConfigForm() {
   );
 
   return (
-    <>
+    <div style={{ padding: "5rem" }}>
       <div className="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-6 text-center text-primary">
           VPN File Config
@@ -267,7 +286,7 @@ export default function VPNConfigForm() {
           </DialogContent>
         </Dialog>
       )}
-    </>
+    </div>
   );
 }
 

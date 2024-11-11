@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import axios from "axios";
-import { TOKEN, URL } from "./constants";
+import { URL } from "./constants";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { Label } from "./components/ui/label";
@@ -36,6 +36,7 @@ export default function VpnServerUpdateForm({
   setShowUpdateForm: any;
   setFlag: any;
 }) {
+  const TOKEN = localStorage.getItem("token");
   const form = useForm({
     defaultValues: {
       ...initialData,

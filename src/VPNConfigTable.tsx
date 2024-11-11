@@ -29,7 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DownloadIcon, TrashIcon } from "lucide-react";
 import { Pencil1Icon } from "@radix-ui/react-icons";
-import { TOKEN, URL } from "./constants";
+import { URL } from "./constants";
 import DeletePermissionDialog from "./DeleteModal";
 
 type VPNType = "ALL" | "FREE_OPEN_VPN" | "PROTO";
@@ -61,6 +61,7 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
   flag,
   setShowUpdateForm,
 }) => {
+  const TOKEN = localStorage.getItem("token");
   const [files, setFiles] = useState<VPNFile[]>([]);
   const [typeFilter, setTypeFilter] = useState<VPNType>(() => {
     const v = localStorage.getItem("vpnTypeFilter");
@@ -153,7 +154,6 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
               <ShadSelect
                 value={columnFilter}
                 onValueChange={(value: any) => {
-                  console.log({ value });
                   setColumnFilter(value);
                 }}
               >
@@ -288,7 +288,6 @@ export const VPNFilesTable: React.FC<VPNFilesTableProps> = ({
         setFiles(data.data);
       } catch (error) {
         console.error("Error fetching files:", error);
-        // You might want to add a toast notification here
       }
     };
 

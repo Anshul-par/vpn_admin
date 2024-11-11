@@ -10,9 +10,10 @@ import {
 import { AlertTriangleIcon } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
-import { TOKEN, URL } from "./constants";
+import { URL } from "./constants";
 
 export default function DeletePermissionDialog({ id, onClose, setFlag }: any) {
+  const TOKEN = localStorage.getItem("token");
   const handleDelete = async (id: any) => {
     try {
       await axios.delete(`${URL}/open-vpn/${id}`, {
