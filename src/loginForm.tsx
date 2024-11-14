@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Component() {
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const [vals, setVals] = useState({
     username: "",
     password: "",
@@ -34,6 +35,11 @@ export default function Component() {
       localStorage.setItem("expiration", String(Date.now() + 600000));
       navigate("/app");
     } catch (error) {
+      setError(
+        //@ts-ignore
+        error?.response?.data?.message ||
+          "Error occurred check console for more details"
+      );
       console.log("Error_While_Login", error);
     }
   };
@@ -96,6 +102,9 @@ export default function Component() {
             </div>
           </form>
         </CardContent>
+        {error && (
+          <p className="text-red-500 font-semibold text-center p-5 pt-0">{`Error : ${error}`}</p>
+        )}
         <CardFooter>
           <Button
             onClick={handleSubmit}
